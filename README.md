@@ -153,17 +153,6 @@ Allowed positions are `goalkeeper`, `defender`, `midfielder`, and `attacker`.
 
 Allowed statuses are `active`, `sold`, and `cancelled`.
 
-## Business Rules
-
-- Registering a user automatically creates one team for that user.
-- A newly created team starts with a `5000000` budget.
-- Registration generates 20 players: 3 goalkeepers, 6 defenders, 6 midfielders, and 5 attackers.
-- Generated players are aged randomly from 18 to 40 and start with a `1000000` market value.
-- A user owns exactly one team.
-- Only a team owner can update their team or players.
-- A player can have only one active transfer listing at a time.
-- A buyer cannot buy a player from their own team.
-- Buying a player transfers budget from buyer to seller, moves the player to the buyer team, marks the listing as sold, and increases the player market value randomly by 10% to 100%.
 
 ## Endpoints
 
