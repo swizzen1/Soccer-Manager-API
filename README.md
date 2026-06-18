@@ -77,8 +77,8 @@ POST   /api/market/{listing}/buy
 
 ```json
 {
-  "name": "Giorgi Manager",
-  "email": "giorgi@example.com",
+  "name": "Admin",
+  "email": "admin@example.com",
   "password": "password123"
 }
 ```
@@ -92,8 +92,8 @@ POST   /api/market/{listing}/buy
   "data": {
     "user": {
       "id": 1,
-      "name": "Giorgi Manager",
-      "email": "giorgi@example.com"
+      "name": "Admin",
+      "email": "admin@example.com"
     },
     "token": "1|token-value"
   }
@@ -109,15 +109,3 @@ POST   /api/market/{listing}/buy
   "errors": {}
 }
 ```
-
-## Business Rules
-
-- Each user owns one team.
-- Registering creates a team and 20 players.
-- New teams start with a 5,000,000 budget.
-- Generated squads contain 3 goalkeepers, 6 defenders, 6 midfielders, and 5 attackers.
-- Players start with a 1,000,000 market value and random age between 18 and 40.
-- Owners can edit team name/country and player first name, last name, and country.
-- Only owners can list or cancel their player transfer listings.
-- Buyers cannot buy their own players.
-- Transfer purchases run inside a database transaction.
