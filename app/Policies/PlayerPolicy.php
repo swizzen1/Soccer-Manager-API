@@ -11,7 +11,9 @@ final class PlayerPolicy
 {
     public function update(User $user, Player $player): bool
     {
-        return $player->team?->user_id === $user->id;
+        return $player->team()
+            ->where('user_id', $user->id)
+            ->exists();
     }
 
     public function listForTransfer(User $user, Player $player): bool

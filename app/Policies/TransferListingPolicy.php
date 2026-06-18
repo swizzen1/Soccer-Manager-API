@@ -11,6 +11,8 @@ final class TransferListingPolicy
 {
     public function buy(User $user, TransferListing $transferListing): bool
     {
-        return $transferListing->sellerTeam?->user_id !== $user->id;
+        return ! $transferListing->sellerTeam()
+            ->where('user_id', $user->id)
+            ->exists();
     }
 }
