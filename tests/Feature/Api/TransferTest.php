@@ -32,6 +32,34 @@ it('owner cannot list same player twice', function (): void {
         ->assertConflict();
 });
 
+it('owner can relist player after cancelling active listing', function (): void {
+    $user = User::factory()->create();
+    $team = Team::factory()->for($user)->create();
+    $player = Player::factory()->for($team)->create();
+    TransferListing::factory()->create([
+        'player_id' => $player->id,
+        'seller_team_id' => $team->id,
+        'status' => TransferListingStatus::CANCELLED,
+    ]);
+
+    $this->actingAs($user, 'sanctum')
+        ->postJson("/api/players/{$player->id}/transfer-list", ['asking_price' => 1_500_000])
+        ->assertCreated()
+        ->assertJsonPath('data.status', TransferListingStatus::ACTIVE->value);
+});
+
+it('user cannot list another teams player', function (): void {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    $team = Team::factory()->for($owner)->create();
+    Team::factory()->for($other)->create();
+    $player = Player::factory()->for($team)->create();
+
+    $this->actingAs($other, 'sanctum')
+        ->postJson("/api/players/{$player->id}/transfer-list", ['asking_price' => 1_500_000])
+        ->assertForbidden();
+});
+
 it('users can see market list', function (): void {
     $listing = TransferListing::factory()->create();
 
@@ -102,4 +130,42 @@ it('buyer cannot buy player without enough budget', function (): void {
         ->assertUnprocessable();
 
     expect($buyerTeam->fresh()->budget)->toBe('100.00');
+});
+
+it('buyer cannot buy inactive listing', function (): void {
+    $seller = User::factory()->create();
+    $buyer = User::factory()->create();
+    $sellerTeam = Team::factory()->for($seller)->create();
+    Team::factory()->for($buyer)->create();
+    $player = Player::factory()->for($sellerTeam)->create();
+    $listing = TransferListing::factory()->create([
+        'player_id' => $player->id,
+        'seller_team_id' => $sellerTeam->id,
+        'status' => TransferListingStatus::CANCELLED,
+    ]);
+
+    $this->actingAs($buyer, 'sanctum')
+        ->postJson("/api/market/{$listing->id}/buy")
+        ->assertConflict();
+});
+
+it('buyer cannot buy stale listing when player no longer belongs to seller', function (): void {
+    $seller = User::factory()->create();
+    $buyer = User::factory()->create();
+    $other = User::factory()->create();
+    $sellerTeam = Team::factory()->for($seller)->create();
+    Team::factory()->for($buyer)->create();
+    $otherTeam = Team::factory()->for($other)->create();
+    $player = Player::factory()->for($sellerTeam)->create();
+    $listing = TransferListing::factory()->create([
+        'player_id' => $player->id,
+        'seller_team_id' => $sellerTeam->id,
+        'status' => TransferListingStatus::ACTIVE,
+    ]);
+
+    $player->update(['team_id' => $otherTeam->id]);
+
+    $this->actingAs($buyer, 'sanctum')
+        ->postJson("/api/market/{$listing->id}/buy")
+        ->assertConflict();
 });

@@ -18,6 +18,8 @@ final class UpdateTeamRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:100'],
             'country' => ['sometimes', 'string', 'max:100'],
+            'budget' => ['prohibited'],
+            'user_id' => ['prohibited'],
         ];
     }
 }

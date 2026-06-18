@@ -51,6 +51,25 @@ it('team owner can partially update team editable fields', function (): void {
         ->assertJsonPath('data.country', $team->country);
 });
 
+it('team owner cannot update financial or ownership fields', function (): void {
+    [$user, $team] = createTeamWithPlayers();
+
+    $this->actingAs($user, 'sanctum')
+        ->putJson('/api/team', [
+            'name' => 'Dinamo API',
+            'budget' => 99_000_000,
+            'user_id' => User::factory()->create()->id,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['budget', 'user_id']);
+
+    $team->refresh();
+
+    expect($team->name)->not->toBe('Dinamo API')
+        ->and((float) $team->budget)->toBe(5_000_000.0)
+        ->and($team->user_id)->toBe($user->id);
+});
+
 it('user cannot access team endpoints without authentication', function (): void {
     $this->getJson('/api/team')
         ->assertUnauthorized()

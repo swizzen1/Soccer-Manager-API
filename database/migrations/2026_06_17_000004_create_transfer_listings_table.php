@@ -21,11 +21,22 @@ return new class extends Migration
             $table->index(['status', 'created_at']);
         });
 
-        if (DB::getDriverName() === 'sqlite') {
-            DB::statement(
+        match (DB::getDriverName()) {
+            'sqlite', 'pgsql' => DB::statement(
                 "CREATE UNIQUE INDEX transfer_listings_active_player_unique ON transfer_listings (player_id) WHERE status = 'active'"
-            );
-        }
+            ),
+            'mysql', 'mariadb' => DB::statement(
+                "ALTER TABLE transfer_listings
+                    ADD active_player_id BIGINT UNSIGNED GENERATED ALWAYS AS (
+                        CASE WHEN status = 'active' THEN player_id ELSE NULL END
+                    ) STORED,
+                    ADD UNIQUE INDEX transfer_listings_active_player_unique (active_player_id)"
+            ),
+            'sqlsrv' => DB::statement(
+                "CREATE UNIQUE INDEX transfer_listings_active_player_unique ON transfer_listings (player_id) WHERE status = 'active'"
+            ),
+            default => null,
+        };
     }
 
     public function down(): void

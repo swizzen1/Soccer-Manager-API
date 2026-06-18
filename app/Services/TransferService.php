@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\TransferServiceInterface;
 use App\Contracts\Repositories\PlayerRepositoryInterface;
 use App\Contracts\Repositories\TeamRepositoryInterface;
 use App\Contracts\Repositories\TransferListingRepositoryInterface;
+use App\Contracts\TransferServiceInterface;
 use App\DTOS\CreateTransferListingData;
 use App\Enums\TransferListingStatus;
 use App\Models\Player;
 use App\Models\TransferListing;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -43,12 +44,20 @@ final class TransferService implements TransferServiceInterface
             throw new ConflictHttpException(__('messages.transfer.already_listed'));
         }
 
-        return $this->listings->create([
-            'player_id' => $player->id,
-            'seller_team_id' => $player->team_id,
-            'asking_price' => $data->askingPrice,
-            'status' => TransferListingStatus::ACTIVE,
-        ]);
+        try {
+            return $this->listings->create([
+                'player_id' => $player->id,
+                'seller_team_id' => $player->team_id,
+                'asking_price' => $data->askingPrice,
+                'status' => TransferListingStatus::ACTIVE,
+            ]);
+        } catch (QueryException $exception) {
+            if ($this->isUniqueConstraintViolation($exception)) {
+                throw new ConflictHttpException(__('messages.transfer.already_listed'), $exception);
+            }
+
+            throw $exception;
+        }
     }
 
     public function cancelListing(User $user, Player $player): TransferListing
@@ -80,6 +89,11 @@ final class TransferService implements TransferServiceInterface
             $buyerTeam = $this->teams->lockForUser($buyer);
             $sellerTeam = $this->teams->lock($listing->sellerTeam);
             $askingPrice = (float) $listing->asking_price;
+            $player = $this->players->lock($listing->player);
+
+            if ($player->team_id !== $sellerTeam->id) {
+                throw new ConflictHttpException(__('messages.transfer.stale_listing'));
+            }
 
             if ((float) $buyerTeam->budget < $askingPrice) {
                 throw new UnprocessableEntityHttpException(__('messages.transfer.not_enough_budget'));
@@ -88,7 +102,6 @@ final class TransferService implements TransferServiceInterface
             $this->teams->decrementBudget($buyerTeam, $askingPrice);
             $this->teams->incrementBudget($sellerTeam, $askingPrice);
 
-            $player = $this->players->lock($listing->player);
             $oldValue = (float) $player->market_value;
             $percentage = random_int(10, 100);
 
@@ -99,5 +112,10 @@ final class TransferService implements TransferServiceInterface
 
             return $this->listings->updateStatus($listing, TransferListingStatus::SOLD);
         });
+    }
+
+    private function isUniqueConstraintViolation(QueryException $exception): bool
+    {
+        return in_array($exception->getCode(), ['23000', '23505'], true);
     }
 }

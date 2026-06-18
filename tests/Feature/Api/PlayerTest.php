@@ -60,11 +60,13 @@ it('team owner cannot update locked player fields', function (): void {
             'market_value' => 9_000_000,
             'team_id' => 999,
         ])
-        ->assertOk();
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['age', 'market_value', 'team_id']);
 
     $player->refresh();
 
     expect($player->age)->toBe(22)
+        ->and($player->first_name)->not->toBe('Allowed')
         ->and((float) $player->market_value)->toBe(1_000_000.0)
         ->and($player->team_id)->toBe($team->id);
 });

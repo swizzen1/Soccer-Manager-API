@@ -23,9 +23,7 @@ final class TransferListingRepository implements TransferListingRepositoryInterf
 
     public function hasActiveListing(Player $player): bool
     {
-        return $player->transferListing()
-            ->where('status', TransferListingStatus::ACTIVE)
-            ->exists();
+        return $player->activeTransferListing()->exists();
     }
 
     public function create(array $data): TransferListing
@@ -35,9 +33,7 @@ final class TransferListingRepository implements TransferListingRepositoryInterf
 
     public function activeForPlayer(Player $player): ?TransferListing
     {
-        return $player->transferListing()
-            ->where('status', TransferListingStatus::ACTIVE)
-            ->first();
+        return $player->activeTransferListing()->first();
     }
 
     public function lockWithRelations(TransferListing $listing): TransferListing

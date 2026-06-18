@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\PlayerPosition;
+use App\Enums\TransferListingStatus;
 use Database\Factories\PlayerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['team_id', 'first_name', 'last_name', 'country', 'position', 'age', 'market_value'])]
@@ -19,7 +21,9 @@ class Player extends Model
     use HasFactory;
 
     public const INITIAL_MARKET_VALUE = 1_000_000;
+
     public const MIN_AGE = 18;
+
     public const MAX_AGE = 40;
 
     protected function casts(): array
@@ -36,8 +40,14 @@ class Player extends Model
         return $this->belongsTo(Team::class);
     }
 
-    public function transferListing(): HasOne
+    public function transferListings(): HasMany
     {
-        return $this->hasOne(TransferListing::class);
+        return $this->hasMany(TransferListing::class);
+    }
+
+    public function activeTransferListing(): HasOne
+    {
+        return $this->hasOne(TransferListing::class)
+            ->where('status', TransferListingStatus::ACTIVE);
     }
 }

@@ -28,6 +28,7 @@ return [
         'no_active_listing' => 'Player does not have an active transfer listing.',
         'not_active' => 'Transfer listing is not active.',
         'not_enough_budget' => 'Not enough budget.',
+        'stale_listing' => 'Transfer listing is no longer valid for this player.',
     ],
     'errors' => [
         'not_found' => 'Resource not found.',
