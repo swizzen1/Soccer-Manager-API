@@ -8,17 +8,26 @@ use App\Contracts\Repositories\TransferListingRepositoryInterface;
 use App\Enums\TransferListingStatus;
 use App\Models\Player;
 use App\Models\TransferListing;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 final class TransferListingRepository implements TransferListingRepositoryInterface
 {
-    public function activeListings(): Collection
+    /** @return array<int|string, mixed> */
+    private function listingRelations(): array
+    {
+        return [
+            'player',
+            'sellerTeam' => fn ($query) => $query->withSum('players as players_market_value_sum', 'market_value'),
+        ];
+    }
+
+    public function activeListings(int $perPage): LengthAwarePaginator
     {
         return TransferListing::query()
-            ->with(['player', 'sellerTeam'])
+            ->with($this->listingRelations())
             ->where('status', TransferListingStatus::ACTIVE)
             ->latest()
-            ->get();
+            ->paginate($perPage);
     }
 
     public function hasActiveListing(Player $player): bool
@@ -28,7 +37,7 @@ final class TransferListingRepository implements TransferListingRepositoryInterf
 
     public function create(array $data): TransferListing
     {
-        return TransferListing::query()->create($data)->load(['player', 'sellerTeam']);
+        return TransferListing::query()->create($data)->load($this->listingRelations());
     }
 
     public function activeForPlayer(Player $player): ?TransferListing
@@ -39,7 +48,7 @@ final class TransferListingRepository implements TransferListingRepositoryInterf
     public function lockWithRelations(TransferListing $listing): TransferListing
     {
         return TransferListing::query()
-            ->with(['player', 'sellerTeam'])
+            ->with($this->listingRelations())
             ->lockForUpdate()
             ->findOrFail($listing->id);
     }
@@ -48,6 +57,6 @@ final class TransferListingRepository implements TransferListingRepositoryInterf
     {
         $listing->update(['status' => $status]);
 
-        return $listing->fresh()->load(['player', 'sellerTeam']);
+        return $listing->fresh()->load($this->listingRelations());
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\AuthServiceInterface;
+use App\Contracts\MarketValue\PlayerMarketValueCalculatorInterface;
 use App\Contracts\PlayerGenerationServiceInterface;
 use App\Contracts\PlayerServiceInterface;
 use App\Contracts\Repositories\PlayerRepositoryInterface;
@@ -17,6 +18,7 @@ use App\Repositories\TeamRepository;
 use App\Repositories\TransferListingRepository;
 use App\Repositories\UserRepository;
 use App\Services\AuthService;
+use App\Services\MarketValue\RandomIncreasePlayerMarketValueCalculator;
 use App\Services\PlayerGenerationService;
 use App\Services\PlayerService;
 use App\Services\TeamCreationService;
@@ -37,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TeamServiceInterface::class, TeamService::class);
         $this->app->bind(PlayerServiceInterface::class, PlayerService::class);
         $this->app->bind(TransferServiceInterface::class, TransferService::class);
+        $this->app->bind(PlayerMarketValueCalculatorInterface::class, RandomIncreasePlayerMarketValueCalculator::class);
 
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(TeamRepositoryInterface::class, TeamRepository::class);

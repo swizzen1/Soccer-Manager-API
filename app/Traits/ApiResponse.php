@@ -7,6 +7,7 @@ namespace App\Traits;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 trait ApiResponse
 {
@@ -26,5 +27,24 @@ trait ApiResponse
             'message' => $message,
             'errors' => $errors,
         ], $status);
+    }
+
+    /**
+     * @param  LengthAwarePaginator<int, mixed>  $paginator
+     * @param  class-string<JsonResource>  $resourceClass
+     */
+    protected function paginated(string $message, LengthAwarePaginator $paginator, string $resourceClass): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $resourceClass::collection($paginator->getCollection()),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 }

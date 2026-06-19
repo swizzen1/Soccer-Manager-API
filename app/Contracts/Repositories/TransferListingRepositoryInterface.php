@@ -7,12 +7,12 @@ namespace App\Contracts\Repositories;
 use App\Enums\TransferListingStatus;
 use App\Models\Player;
 use App\Models\TransferListing;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface TransferListingRepositoryInterface
 {
-    /** @return Collection<int, TransferListing> */
-    public function activeListings(): Collection;
+    /** @return LengthAwarePaginator<int, TransferListing> */
+    public function activeListings(int $perPage): LengthAwarePaginator;
 
     public function hasActiveListing(Player $player): bool;
 

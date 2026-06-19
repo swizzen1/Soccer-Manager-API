@@ -17,7 +17,10 @@ final class TeamRepository implements TeamRepositoryInterface
 
     public function getForUser(User $user): Team
     {
-        return $user->team()->with('players')->firstOrFail();
+        return $user->team()
+            ->with('players')
+            ->withSum('players as players_market_value_sum', 'market_value')
+            ->firstOrFail();
     }
 
     public function lockForUser(User $user): Team
@@ -34,7 +37,9 @@ final class TeamRepository implements TeamRepositoryInterface
     {
         $team->update($data);
 
-        return $team->fresh()->load('players');
+        return $team->fresh()
+            ->load('players')
+            ->loadSum('players as players_market_value_sum', 'market_value');
     }
 
     public function incrementBudget(Team $team, float $amount): void

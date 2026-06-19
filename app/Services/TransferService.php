@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Contracts\MarketValue\PlayerMarketValueCalculatorInterface;
 use App\Contracts\Repositories\PlayerRepositoryInterface;
 use App\Contracts\Repositories\TeamRepositoryInterface;
 use App\Contracts\Repositories\TransferListingRepositoryInterface;
@@ -13,8 +14,8 @@ use App\Enums\TransferListingStatus;
 use App\Models\Player;
 use App\Models\TransferListing;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -26,12 +27,13 @@ final class TransferService implements TransferServiceInterface
         private readonly TransferListingRepositoryInterface $listings,
         private readonly TeamRepositoryInterface $teams,
         private readonly PlayerRepositoryInterface $players,
+        private readonly PlayerMarketValueCalculatorInterface $marketValueCalculator,
     ) {}
 
-    /** @return Collection<int, TransferListing> */
-    public function activeListings(): Collection
+    /** @return LengthAwarePaginator<int, TransferListing> */
+    public function activeListings(int $perPage = 15): LengthAwarePaginator
     {
-        return $this->listings->activeListings();
+        return $this->listings->activeListings($perPage);
     }
 
     public function listPlayer(User $user, Player $player, CreateTransferListingData $data): TransferListing
@@ -102,12 +104,9 @@ final class TransferService implements TransferServiceInterface
             $this->teams->decrementBudget($buyerTeam, $askingPrice);
             $this->teams->incrementBudget($sellerTeam, $askingPrice);
 
-            $oldValue = (float) $player->market_value;
-            $percentage = random_int(10, 100);
-
             $this->players->update($player, [
                 'team_id' => $buyerTeam->id,
-                'market_value' => round($oldValue + ($oldValue * $percentage / 100), 2),
+                'market_value' => $this->marketValueCalculator->calculate($player, $listing),
             ]);
 
             return $this->listings->updateStatus($listing, TransferListingStatus::SOLD);

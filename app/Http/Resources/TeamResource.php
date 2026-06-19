@@ -20,8 +20,21 @@ final class TeamResource extends JsonResource
             'name' => $this->name,
             'country' => $this->country,
             'budget' => (float) $this->budget,
-            'team_value' => (float) $this->players()->sum('market_value'),
+            'team_value' => $this->teamValue(),
             'players' => $this->whenLoaded('players', fn () => PlayerResource::collection($this->players)),
         ];
+    }
+
+    private function teamValue(): float
+    {
+        if (array_key_exists('players_market_value_sum', $this->getAttributes())) {
+            return (float) $this->getAttribute('players_market_value_sum');
+        }
+
+        if ($this->relationLoaded('players')) {
+            return (float) $this->players->sum('market_value');
+        }
+
+        return 0.0;
     }
 }

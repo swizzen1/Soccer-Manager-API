@@ -8,12 +8,12 @@ use App\DTOS\CreateTransferListingData;
 use App\Models\Player;
 use App\Models\TransferListing;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface TransferServiceInterface
 {
-    /** @return Collection<int, TransferListing> */
-    public function activeListings(): Collection;
+    /** @return LengthAwarePaginator<int, TransferListing> */
+    public function activeListings(int $perPage = 15): LengthAwarePaginator;
 
     public function listPlayer(User $user, Player $player, CreateTransferListingData $data): TransferListing;
 

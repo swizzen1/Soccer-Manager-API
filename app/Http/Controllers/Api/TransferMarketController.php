@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Transfer\BuyTransferListingRequest;
 use App\Http\Requests\Transfer\CancelTransferListingRequest;
 use App\Http\Requests\Transfer\CreateTransferListingRequest;
+use App\Http\Requests\Transfer\ListTransferListingsRequest;
 use App\Http\Resources\TransferListingResource;
 use App\Models\Player;
 use App\Models\TransferListing;
@@ -22,11 +23,12 @@ final class TransferMarketController extends Controller
 
     public function __construct(private readonly TransferServiceInterface $transferService) {}
 
-    public function index(): JsonResponse
+    public function index(ListTransferListingsRequest $request): JsonResponse
     {
-        return $this->success(
+        return $this->paginated(
             __('messages.transfer.index_success'),
-            TransferListingResource::collection($this->transferService->activeListings())
+            $this->transferService->activeListings($request->perPage()),
+            TransferListingResource::class
         );
     }
 
